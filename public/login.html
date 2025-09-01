@@ -17,61 +17,64 @@ button:hover { background-color: #1c5980; transform: scale(1.03); }
 .error { color: red; margin-top: 1rem; min-height: 24px; }
 </style>
 
-<!-- تحميل مكتبة Supabase أولاً -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<!-- تحميل مكتبة Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
 
-<script>
-const SUPABASE_URL = "https://vmvjgwnnlpyucwsvpsso.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdmpnd25ubHB5c3Zwc3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjYzOTcsImV4cCI6MjA3MjI0MjM5N30.MVt07pKOkyx2nkBeLNhOPcGUcV-hZvwA_VD7YFEatYM";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script defer>
+document.addEventListener('DOMContentLoaded', async () => {
+    const SUPABASE_URL = "https://vmvjgwnnlpyucwsvpsso.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdmpnd25ubHB5c3Zwc3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjYzOTcsImV4cCI6MjA3MjI0MjM5N30.MVt07pKOkyx2nkBeLNhOPcGUcV-hZvwA_VD7YFEatYM";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-document.addEventListener('DOMContentLoaded', () => {
+    // إعادة التوجيه إذا تم تسجيل الدخول مسبقاً
     if (localStorage.getItem('isLoggedIn') === 'true') {
         window.location.href = 'index.html';
+        return;
     }
+
+    async function login() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errorBox = document.getElementById('error');
+
+        if (!username || !password) {
+            errorBox.textContent = "❌ الرجاء ملء جميع الحقول";
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('accounts')
+            .select('*')
+            .eq('username', username)
+            .single();
+
+        if (error || !data) {
+            errorBox.textContent = "❌ اسم المستخدم غير موجود";
+            return;
+        }
+
+        if (password !== data.password_hash) { 
+            errorBox.textContent = "❌ كلمة المرور غير صحيحة";
+            return;
+        }
+
+        // تسجيل الدخول
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userId', data.id);
+
+        // تسجيل الجهاز
+        const deviceName = navigator.userAgent;
+        await supabaseClient.from('user_devices').upsert([{
+            user_id: data.id,
+            device_name: deviceName,
+            last_login: new Date().toISOString()
+        }]);
+
+        window.location.href = 'index.html';
+    }
+
+    document.querySelector('button').addEventListener('click', login);
 });
-
-async function login() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const errorBox = document.getElementById('error');
-
-    if (!username || !password) {
-        errorBox.textContent = "❌ الرجاء ملء جميع الحقول";
-        return;
-    }
-
-    // جلب بيانات الحساب من Supabase
-    const { data, error } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .eq('username', username)
-        .single();
-
-    if (error || !data) {
-        errorBox.textContent = "❌ اسم المستخدم غير موجود";
-        return;
-    }
-
-    if (password !== data.password_hash) { 
-        errorBox.textContent = "❌ كلمة المرور غير صحيحة";
-        return;
-    }
-
-    // تسجيل الدخول بنجاح
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userId', data.id);
-
-    // تسجيل الجهاز الحالي
-    const deviceName = navigator.userAgent;
-    await supabaseClient.from('user_devices').upsert([{
-        user_id: data.id,
-        device_name: deviceName,
-        last_login: new Date().toISOString()
-    }]);
-
-    window.location.href = 'index.html';
-}
 </script>
 </head>
 <body>
@@ -79,7 +82,7 @@ async function login() {
 <h2>تسجيل الدخول</h2>
 <input type="text" id="username" placeholder="اسم المستخدم" autocomplete="username" />
 <input type="password" id="password" placeholder="كلمة المرور" autocomplete="current-password" />
-<button onclick="login()">دخول</button>
+<button>دخول</button>
 <div class="error" id="error"></div>
 </div>
 </body>
