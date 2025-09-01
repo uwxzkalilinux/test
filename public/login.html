@@ -16,7 +16,10 @@ button { width: 100%; padding: 0.75rem; font-size: 1rem; background-color: #2980
 button:hover { background-color: #1c5980; transform: scale(1.03); }
 .error { color: red; margin-top: 1rem; min-height: 24px; }
 </style>
+
+<!-- تحميل مكتبة Supabase أولاً -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <script>
 const SUPABASE_URL = "https://vmvjgwnnlpyucwsvpsso.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdmpnd25ubHB5c3Zwc3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjYzOTcsImV4cCI6MjA3MjI0MjM5N30.MVt07pKOkyx2nkBeLNhOPcGUcV-hZvwA_VD7YFEatYM";
@@ -38,6 +41,7 @@ async function login() {
         return;
     }
 
+    // جلب بيانات الحساب من Supabase
     const { data, error } = await supabaseClient
         .from('accounts')
         .select('*')
@@ -54,10 +58,11 @@ async function login() {
         return;
     }
 
+    // تسجيل الدخول بنجاح
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userId', data.id);
 
-    // تسجيل الجهاز
+    // تسجيل الجهاز الحالي
     const deviceName = navigator.userAgent;
     await supabaseClient.from('user_devices').upsert([{
         user_id: data.id,
