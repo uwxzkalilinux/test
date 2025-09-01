@@ -20,7 +20,7 @@ button:hover { background-color: #1c5980; transform: scale(1.03); }
 <script>
 const SUPABASE_URL = "https://vmvjgwnnlpyucwsvpsso.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdmpnd25ubHB5c3Zwc3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjYzOTcsImV4cCI6MjA3MjI0MjM5N30.MVt07pKOkyx2nkBeLNhOPcGUcV-hZvwA_VD7YFEatYM";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('isLoggedIn') === 'true') {
@@ -38,7 +38,7 @@ async function login() {
         return;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('accounts')
         .select('*')
         .eq('username', username)
@@ -59,7 +59,7 @@ async function login() {
 
     // تسجيل الجهاز
     const deviceName = navigator.userAgent;
-    await supabase.from('user_devices').upsert([{
+    await supabaseClient.from('user_devices').upsert([{
         user_id: data.id,
         device_name: deviceName,
         last_login: new Date().toISOString()
