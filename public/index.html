@@ -1,26 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Trip Information Search</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<style>
-body { font-family: 'Cairo', sans-serif; background: url('https://www.transparenttextures.com/patterns/stardust.png'), radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); background-size: cover; overflow-x: hidden; color:white; }
-.stars { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: -1; background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat; animation: moveStars 200s linear infinite; }
-@keyframes moveStars { from { background-position: 0 0; } to { background-position: 10000px 10000px; } }
-.radar { width: 200px; height: 200px; border-radius: 50%; border: 4px solid rgba(0, 255, 0, 0.5); position: relative; margin: 20px auto; overflow: hidden; }
-.radar-sweep { width: 100%; height: 100%; background: conic-gradient(rgba(0,255,0,0.6) 0deg, rgba(0,255,0,0.1) 60deg, transparent 360deg); border-radius: 50%; animation: radarRotate 3s linear infinite; transform-origin: center; display: none; }
-@keyframes radarRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-</style>
-</head>
-<body class="min-h-screen flex flex-col items-center justify-start py-10 px-4">
 <script>
 const SUPABASE_URL = "https://vmvjgwnnlpyucwsvpsso.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtdmpnd25ubHB5c3Zwc3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjYzOTcsImV4cCI6MjA3MjI0MjM5N30.MVt07pKOkyx2nkBeLNhOPcGUcV-hZvwA_VD7YFEatYM";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = "..."; // نفس المفتاح
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
@@ -28,89 +9,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function logout() {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userId');
-    window.location.href = 'login.html';
-}
-
-function formatDate(dateStr) { if (!dateStr) return "N/A"; const d = new Date(dateStr); return d.toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' }); }
-
 async function fetchData() {
     const uniqueId = document.getElementById("uniqueId").value.trim();
     const stats = document.getElementById("stats");
-    const withSonarCol = document.getElementById("withSonarColumn");
-    const withoutSonarCol = document.getElementById("withoutSonarColumn");
     const radarSweep = document.getElementById("radarSweep");
-    withSonarCol.innerHTML = '<h2 class="text-2xl font-extrabold text-green-600 mb-4">✅ With Sonar</h2>';
-    withoutSonarCol.innerHTML = '<h2 class="text-2xl font-extrabold text-red-600 mb-4">🚫 Without Sonar</h2>';
-    stats.textContent = "";
-    if (!uniqueId) { stats.textContent = "Please enter the unique number."; return; }
     radarSweep.style.display = "block";
 
     try {
         const response = await fetch(`/api/proxy?unique=${encodeURIComponent(uniqueId)}`);
-        if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
         const data = await response.json();
         const trips = data.trips || [];
-        if (trips.length === 0) { stats.textContent = "🚫 No data found for this unique number."; return; }
+        
+        // عرض النتائج (With/Without Sonar)
+        // ... الكود نفسه كما في النسخة السابقة
 
-        let withSonar = 0, withoutSonar = 0;
-        trips.forEach(trip => {
-            const hasSonar = trip.sonarData?.manifests?.length > 0;
-            const sonarDate = hasSonar ? formatDate(trip.sonarData.manifests[0].sonarPictureDayTime) : "N/A";
-            const card = document.createElement('div');
-            card.className = 'bg-gradient-to-br from-white via-gray-100 to-slate-200 rounded-2xl p-5 mb-4 shadow-md text-black';
-            card.innerHTML = `
-                <div class="text-${hasSonar ? 'green' : 'red'}-600 font-bold text-lg mb-2"> ${hasSonar ? ' With Sonar' : ' Without Sonar'} </div>
-                <p><strong>🚛 Truck Number:</strong> ${trip.truck_number || 'N/A'}</p>
-                <p><strong>🧍 Driver:</strong> ${trip.driver_name || 'N/A'}</p>
-                <p><strong>📦 Container:</strong> ${trip.container_number || 'N/A'}</p>
-                <p><strong>📌 Berth:</strong> ${trip.berth || 'N/A'}</p>
-                <p><strong>👤 Agent:</strong> ${trip.transportation_agent || 'N/A'}</p>
-                <p><strong>📅 Sonar Date:</strong> ${sonarDate}</p>
-            `;
-            if (hasSonar) { withSonarCol.appendChild(card); withSonar++; } 
-            else { withoutSonarCol.appendChild(card); withoutSonar++; }
-        });
-
-        stats.textContent = `📊 Total Results: ${trips.length} — ✅ ${withSonar} | 🚫 ${withoutSonar}`;
-
-        // تسجيل البحث في Supabase
+        // تسجيل البحث
         const userId = localStorage.getItem('userId') || null;
-        await supabase.from('api_logs').insert([{
+        await supabaseClient.from('api_logs').insert([{
             user_id: userId,
             query_type: 'unique',
             query_value: uniqueId,
             response: trips
         }]);
-
     } catch (error) { stats.textContent = "⚠️ Error: " + error.message; }
     finally { radarSweep.style.display = "none"; }
 }
 </script>
-
-<div class="stars"></div>
-<div class="w-full max-w-4xl mx-auto text-center mb-6">
-<h1 class="text-4xl font-extrabold tracking-tight drop-shadow-md"> Trip Information Search</h1>
-<button onclick="logout()" class="mt-4 bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-xl shadow-lg transition transform hover:scale-105">Logout</button>
-</div>
-
-<div class="w-full bg-black bg-opacity-50 p-8 rounded-3xl shadow-2xl backdrop-blur-md">
-<input id="uniqueId" class="w-full border-2 border-green-400 rounded-xl px-5 py-3 text-lg text-black focus:outline-none focus:ring-4 focus:ring-green-400 mb-4" placeholder="🔢 Enter unique number" />
-<button onclick="fetchData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-2xl text-lg font-semibold shadow-lg transition transform hover:scale-105"> 🚀 Search </button>
-<div class="radar"><div class="radar-sweep" id="radarSweep"></div></div>
-</div>
-
-<div id="stats" class="text-center mt-6 text-lg font-semibold"></div>
-
-<div class="grid md:grid-cols-2 gap-6 mt-10 w-full">
-<div class="bg-white text-black rounded-3xl shadow-xl p-6" id="withoutSonarColumn">
-<h2 class="text-2xl font-extrabold text-red-600 mb-4"> Without Sonar</h2>
-</div>
-<div class="bg-white text-black rounded-3xl shadow-xl p-6" id="withSonarColumn">
-<h2 class="text-2xl font-extrabold text-green-600 mb-4"> With Sonar</h2>
-</div>
-</div>
-</body>
-</html>
